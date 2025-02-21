@@ -103,12 +103,6 @@ class Client():
     # TODO: what happens now?
 
 
-
-  # TODO: decide if this is worth having or if it should be left to people.
-  def process_response(self):
-    """If extra processing logic is required place it here"""
-
-
   def request(self, api_version='1.0', api_path='', auto_poll=True,
                 *args, **kwargs):
     """Make request to API

@@ -97,10 +97,23 @@ class Client():
     print('operation id')
     print(operation_id)
 
+    print('Waiting for request to complete')
+
     # with operation ID in hand - we hope - we can start polling.
     # I don't know how this works... will it just sit and wait? Will I need to update some timeout?
-    op_stat = self.request(api_path='operations/{}/wait'.format(operation_id), auto_poll=False)
+    op_status = self.request(api_path='operations/{}/wait'.format(operation_id), auto_poll=False)
+
     # TODO: what happens now?
+    # ... 'and when op_status is ok, populate request_result and valiate it
+
+    print('Status is {}. Continuing to validating current data'.format(request_result.status_code))
+    # Once we're no longer polling, validity check the result.
+    # Check return codes are in order
+    if self.validate(request_result) is True:
+      return request_result
+    else:
+      print('Validate failed on {}'.format(request_result.__dict__))
+      return None
 
 
   def request(self, api_version='1.0', api_path='', auto_poll=True,
@@ -142,19 +155,12 @@ class Client():
     # Print out request result 
     # print(request_result.__dict__)
 
-    # If we need to poll for a status update, do so now.
-    if request_result.status_code == 202:
-      print('Starting to poll')
-      self.poll_api(request_result)
-    else:
-      print('Status is {}, no polling will be performed. Continuing to validating current data'.format(request_result.status_code))
-
     # Once we're no longer polling, validity check the result.
     # Check return codes are in order
     if self.validate(request_result) is True:
       return request_result
     else:
-      print('validate failed on {}'.format(request_result.__dict__))
+      print('Validate failed on {}'.format(request_result.__dict__))
       return None
 
 

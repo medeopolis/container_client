@@ -64,6 +64,7 @@ class Client():
 
     Only required for https targets
     """
+    # TODO: Support turning on/off cert checking like I had to in other project? how is that done?
     pass
 
   def poll_api(self, returned_data=None):
@@ -104,6 +105,7 @@ class Client():
     # with operation ID in hand - we hope - we can start polling.
     # I don't know how this works... will it just sit and wait? Will I need to update some timeout?
     op_status = self.request(api_path='operations/{}/wait'.format(operation_id))
+    # print('Polling result: {}'.format(op_status.__dict__))
     print('Polling result: {}'.format(op_status))
 
     print('Status is {}. Continuing to validating current data'.format(op_status.status_code))
@@ -117,7 +119,7 @@ class Client():
 
 
   def request(self, api_version='1.0', request_type='GET', api_path='', post_json=None,
-               *args, **kwargs):
+               skip_validation=False, *args, **kwargs):
     """Make request to API
 
     Send query to LXD or Incus API endpoint.
@@ -165,7 +167,13 @@ class Client():
       return None
 
     # Print out request result 
-    print('Request result headers: {}'.format(request_result.headers))
+    # print('Request result headers: {}'.format(request_result.headers))
+
+    print('Request result full: {}'.format(request_result.__dict__))
+
+    # We don't always want validation, it may not be appropriate (eg pulling logs seems to cause this)
+    if skip_validation is True:
+      return request_result
 
     # Check return codes are in order
     if self.validate(request_result) is True:
@@ -198,7 +206,7 @@ class Client():
       print('Response did not contain valid json. Error was {}'.format(rejde))
       return False
 
-    print('Validated json content {}'.format(json_content))
+    print('Validated json content: {}'.format(json_content))
 
     # When an instance already exists there is error_code 409 and status_code 0. That may or may not actually be OK depending on what was planned...
     # but I think its OK for my purposes.

@@ -1,7 +1,7 @@
 
 import pytest
 
-from incus_client.client import Client
+from container_client.client import Client
 
 class ReturnedDataStub:
   status_code = 999

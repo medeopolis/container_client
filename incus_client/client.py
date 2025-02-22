@@ -162,7 +162,7 @@ class Client():
     # Lastly just produce an error
     else:
       print('Unknown connection target: {}'.format(connection_target))
-      request_result = None
+      return None
 
     # Print out request result 
     print('Request result headers: {}'.format(request_result.headers))

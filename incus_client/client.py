@@ -195,12 +195,14 @@ class Client():
       # read out json content from response
       json_content = returned_data.json()
     except requests.exceptions.JSONDecodeError as rejde:
-      print('response did not contain valid json. Error was {}'.format(rejde))
+      print('Response did not contain valid json. Error was {}'.format(rejde))
       return False
 
-    print(json_content)
+    print('Validated json content {}'.format(json_content))
 
-    if json_content['status_code'] < 400:
+    # When an instance already exists there is error_code 409 and status_code 0. That may or may not actually be OK depending on what was planned...
+    # but I think its OK for my purposes.
+    if json_content['status_code'] not in self.HTTP_ERROR_CODES:
       # Assume we're OK
       return True
 

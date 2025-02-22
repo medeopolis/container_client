@@ -116,36 +116,48 @@ class Client():
       return None
 
 
-  def request(self, api_version='1.0', api_path='', auto_poll=True,
-                *args, **kwargs):
+  def request(self, api_version='1.0', request_type='GET', api_path='', post_json=None,
+               *args, **kwargs):
     """Make request to API
 
     Send query to LXD or Incus API endpoint.
+    api_version (default 1.0) allows choosing a version for the API
+    request_type (default 'GET') allows choosing how the request is made
     api_path (default unset) should be the HTTPS URI of your remote server or path to local socket.
-    auto_poll (default true) specifies if this call should wait until async operations complete
+    post_json (default None) a python dictionary which will be passed to requests's json parameter.
+
     """
 
     # Pull connection target from object
     connection_target = self.connection_target
 
-    # TODO: import `re` and match on > 1st char?
+    if post_json is None and request_type in ['PUT', 'PATCH', 'POST']:
+      print('This request type ({}) requires post_json be provided'.format(request_type))
+      # TODO: raise error
+
+    # import `re` and match on > 1st char?
     if connection_target.startswith('/'):
+      # Use unix socket ; this is the default behaviour
       self.session = requests_unixsocket.Session()
 
-      # Use unix socket ; this is the default behaviour
       try:
-        request_result = self.session.get('http+unix://{0}/{1}/{2}'.format(quote_plus(connection_target), api_version, api_path))
+        request_result = self.session.request(request_type,
+                                'http+unix://{0}/{1}/{2}'.format(quote_plus(connection_target), api_version, api_path), json=post_json)
       except ( urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
         print('Unable to connect to socket at {}, error {}'.format(connection_target, uepe))
+        # Raise error to caller?
 
     # Otherwise use a remote https target if connection target is so configured
-    # TODO: use self.authenticate() to handle auth when i get to testing a remote service
     elif connection_target.startswith('https://'):
+      # TODO: if any steps are required to support authentication add to the session
+      # TODO: use self.authenticate() to handle auth when i get to testing a remote service
       self.session = requests.Session()
       try:
-        request_result = self.session.get('{0}/{1}/{2}'.format(connection_target, api_version, api_path))
+        request_result = self.session.request(request_type,
+                                '{0}/{1}/{2}'.format(connection_target, api_version, api_path), json=post_json)
       except (urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
         print('Unable to connect to remote server at {}, error {}'.format(connection_target, uepe))
+        # Raise error to caller?
 
     # Lastly just produce an error
     else:
@@ -153,14 +165,15 @@ class Client():
       request_result = None
 
     # Print out request result 
-    # print(request_result.__dict__)
+    print('Request result headers: {}'.format(request_result.headers))
 
-    # Once we're no longer polling, validity check the result.
     # Check return codes are in order
     if self.validate(request_result) is True:
       return request_result
     else:
-      print('Validate failed on {}'.format(request_result.__dict__))
+      print('Request validate failed on {}'.format(request_result.__dict__))
+      print(request_result)
+      # Raise error instead of return none?
       return None
 
 

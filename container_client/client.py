@@ -20,6 +20,7 @@ from urllib.parse import quote_plus
 # Error handling; flows in via requests_unixsocket
 import urllib3.exceptions
 import requests.exceptions
+import ssl
 
 
 class Client():
@@ -59,13 +60,23 @@ class Client():
   connection_target = '/var/lib/incus/unix.socket'
 
 
-  def authenticate(self):
+  def authenticate(self, client_auth_certificates, server_verification):
     """Authentication entrypoint
 
     Only required for https targets
     """
-    # TODO: Support turning on/off cert checking like I had to in other project? how is that done?
-    pass
+    if client_auth_certificates == None:
+      print('A certificate in PEM format or a tuple of key/crt files must be provided')
+      return None
+    else:
+      self.session.cert = client_auth_certificates
+
+    if server_verification in [ None, False ]:
+      print('HTTPs server verification is turned off')
+      self.session.verify = False
+    else:
+      self.session.verify = server_verification
+
 
   def poll_api(self, returned_data=None):
     """Manage polling for status updates on long running requests
@@ -119,7 +130,8 @@ class Client():
 
 
   def request(self, api_version='1.0', request_type='GET', api_path='', post_json=None,
-               skip_validation=False, *args, **kwargs):
+               skip_result_validation=False, client_auth_certificates=None, server_verification=False,
+               *args, **kwargs):
     """Make request to API
 
     Send query to LXD or Incus API endpoint.
@@ -127,7 +139,9 @@ class Client():
     request_type (default 'GET') allows choosing how the request is made
     api_path (default unset) should be the HTTPS URI of your remote server or path to local socket.
     post_json (default None) a python dictionary which will be passed to requests's json parameter.
-
+    skip_result_validation (default False) prevents json returned from the API being checked
+    client_auth_certificates (default None) is a path to a pem or a tuple of client cert, client key.
+    server_verification (default False) when a path to a server certificate is provided, turns on verification
     """
 
     # Pull connection target from object
@@ -154,12 +168,34 @@ class Client():
       # TODO: if any steps are required to support authentication add to the session
       # TODO: use self.authenticate() to handle auth when i get to testing a remote service
       self.session = requests.Session()
+
+      self.authenticate(client_auth_certificates, server_verification)
+
+      # TODO: catch exceptions when port is wrong/absent
       try:
         request_result = self.session.request(request_type,
                                 '{0}/{1}/{2}'.format(connection_target, api_version, api_path), json=post_json)
-      except (urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
+      # except (urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
+      except urllib3.exceptions.ProtocolError as uepe:
         print('Unable to connect to remote server at {}, error {}'.format(connection_target, uepe))
         # Raise error to caller?
+        return None
+      except (ssl.SSLCertVerificationError, urllib3.exceptions.SSLError, requests.exceptions.SSLError) as sscve:
+        print('Unable to verify certificate provided by {}, error {}'.format(connection_target, sscve))
+        # Raise error to caller?
+        return None
+      except urllib3.exceptions.MaxRetryError as uemre:
+        print('Unable to establish stable connection with {}, error {}'.format(connection_target, sscve))
+        # Raise error to caller?
+        return None
+      except requests.exceptions.ConnectionError as rece:
+        print('Unable to connect to host {}, error {}'.format(connection_target, rece))
+        # Raise error to caller?
+        return None
+      except urllib3.exceptions.NameResolutionError as uenre:
+        print('Unable to resolve host {}, error {}'.format(connection_target, uenre))
+        # Raise error to caller?
+        return None
 
     # Lastly just produce an error
     else:
@@ -172,7 +208,7 @@ class Client():
     print('Request result full: {}'.format(request_result.__dict__))
 
     # We don't always want validation, it may not be appropriate (eg pulling logs seems to cause this)
-    if skip_validation is True:
+    if skip_result_validation is True:
       return request_result
 
     # Check return codes are in order

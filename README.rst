@@ -4,7 +4,8 @@
 .. _`LXD`: https://documentation.ubuntu.com/lxd/en/latest/
 .. _`Incus`: https://linuxcontainers.org/incus/
 
-A minimal amount of error checking and data validation are performed but most is left to the caller.
+A minimal amount of error checking and data validation are performed but most is left to the caller. All API calls should work, but only a handful
+have been tested.
 
 Where possible, `PyLXD`_ is probably a better choice for most casual uses.
 

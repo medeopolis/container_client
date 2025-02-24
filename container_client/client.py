@@ -30,7 +30,8 @@ class Client():
 
   # Values taken from API documentation
   HTTP_SUCCESSFUL_SYNCHRONOUS_CODES = [ 200 ]
-  HTTP_SUCCESSFUL_BACKGROUND_CODES = [ 202 ]
+  # Trying this with 100 added; its not in the API spec.
+  HTTP_SUCCESSFUL_BACKGROUND_CODES = [ 100, 202 ]
   HTTP_ERROR_CODES = [ 400, 401, 403, 404, 409, 412, 500 ]
   # Key = hard coded API identifier, Value = friendly text for humans
   API_STATUS_CODES = {

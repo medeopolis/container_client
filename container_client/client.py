@@ -95,8 +95,8 @@ class Client():
       print('Data is "False"; perhaps this was called on the output of a failed function?')
       return False
 
-    if returned_data.status_code not in self.HTTP_SUCCESSFUL_BACKGROUND_CODES:
-      print('Data has a status code of {}, this function is not necesary'.format(returned_data.status_code))
+    if returned_data['status_code'] not in self.HTTP_SUCCESSFUL_BACKGROUND_CODES:
+      print('Data has a status code of {}, this function is not necesary'.format(returned_data['status_code']))
       return returned_data
 
     # ok, thats the known error cases out of the way...
@@ -104,6 +104,9 @@ class Client():
     try:
       # read out json content from response
       json_content = returned_data.json()
+    except AttributeError as ae:
+      print("{} - we're going to try and treat our data as json and keep going".format(ae))
+      json_content = returned_data
     except requests.exceptions.JSONDecodeError as rejde:
       print('Response did not contain valid json. Error was {}'.format(rejde))
       return False

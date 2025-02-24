@@ -165,8 +165,6 @@ class Client():
 
     # Otherwise use a remote https target if connection target is so configured
     elif connection_target.startswith('https://'):
-      # TODO: if any steps are required to support authentication add to the session
-      # TODO: use self.authenticate() to handle auth when i get to testing a remote service
       self.session = requests.Session()
 
       self.authenticate(client_auth_certificates, server_verification)

@@ -207,7 +207,7 @@ class Client():
     # Print out request result 
     # print('Request result headers: {}'.format(request_result.headers))
 
-    print('Request result full: {}'.format(request_result.__dict__))
+    # print('Request result full: {}'.format(request_result.__dict__))
 
     # We don't always want validation, it may not be appropriate (eg pulling logs seems to cause this)
     if skip_result_validation is True:
@@ -244,7 +244,7 @@ class Client():
       print('Response did not contain valid json. Error was {}'.format(rejde))
       return False
 
-    print('Validated json content: {}'.format(json_content))
+    # print('Validated json content: {}'.format(json_content))
 
     # When an instance already exists there is error_code 409 and status_code 0. That may or may not actually be OK depending on what was planned...
     # but I think its OK for my purposes.

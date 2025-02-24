@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "container_client"
+version = "0.0.1"
+dependencies = [
+    "requests",
+    "requests_unixsocket==v0.3.1a0",
+]
+

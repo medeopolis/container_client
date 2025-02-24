@@ -22,6 +22,12 @@ Key functions to interact with the API are ``request`` (send request) and ``poll
 request/json verification doesn't suit.
 
 
+Installing
+==========
+
+This is not currently distributed through pypi or similar channels. Please install it with `pip install` directly from the source repository.
+
+
 Usage
 =====
 

@@ -61,10 +61,13 @@ class Client():
   connection_target = '/var/lib/incus/unix.socket'
 
 
-  def authenticate(self, client_auth_certificates, server_verification):
+  def authenticate(self, client_auth_certificates=None, server_verification=False):
     """Authentication entrypoint
 
     Only required for https targets
+
+    client_auth_certificates - Path to a certificate
+    server_verification - boolean True/False
     """
     if client_auth_certificates == None:
       print('A certificate in PEM format or a tuple of key/crt files must be provided')
@@ -76,13 +79,13 @@ class Client():
       print('HTTPs server verification is turned off')
       self.session.verify = False
     else:
-      self.session.verify = server_verification
+      self.session.verify = True
 
 
   def poll_api(self, returned_data=None):
     """Manage polling for status updates on long running requests
 
-    returned_data (default none) is what our api returned.
+    returned_data (default None) is a requests.Response object with what our api returned.
 
     Default implementation waits until an operation finishes or times out, rather than actually polling.
     """
@@ -113,6 +116,7 @@ class Client():
 
     # So thats the basic validation done.
     # now we check for the operation ID
+    # TODO: try/catch this
     operation_id = json_content['metadata']['id']
 
     print('Waiting for request to complete')
@@ -146,6 +150,8 @@ class Client():
     skip_result_validation (default False) prevents json returned from the API being checked
     client_auth_certificates (default None) is a path to a pem or a tuple of client cert, client key.
     server_verification (default False) when a path to a server certificate is provided, turns on verification
+
+    Returns ``requests.Response`` (provided by Python ``requests`` or ``requests_unixsocket``) or ``None`` on error.
     """
 
     # Pull connection target from object
@@ -166,6 +172,7 @@ class Client():
       except ( urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
         print('Unable to connect to socket at {}, error {}'.format(connection_target, uepe))
         # Raise error to caller?
+        return None
 
     # Otherwise use a remote https target if connection target is so configured
     elif connection_target.startswith('https://'):
@@ -206,11 +213,11 @@ class Client():
 
     # Print out request result 
     # print('Request result headers: {}'.format(request_result.headers))
-
     # print('Request result full: {}'.format(request_result.__dict__))
 
     # We don't always want validation, it may not be appropriate (eg pulling logs seems to cause this)
     if skip_result_validation is True:
+      # print('Skipping validation and returning')
       return request_result
 
     # Check return codes are in order

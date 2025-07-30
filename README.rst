@@ -214,3 +214,24 @@ On error, ``None`` is returned along with an error message.
 
   Unable to connect to host https://farhost:8443, error HTTPSConnectionPool(host='farhost', port=8443): Max retries exceeded with url: /1.0/instances?recursion=2 (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f724b16e610>: Failed to resolve 'farhost' ([Errno -2] Name or service not known)"))
 
+
+Running tests
+^^^^^^^^^^^^^
+
+Some basic ``pytest`` based tests are included. In order to use them:
+- Configure incus to listen on localhost and set up certificates (see ``Authentication examples``)
+- Optionally, create a new Python virtual environment to test in, eg
+::
+
+  virtualenv ~/.venvs/incusapi/
+
+- Install packages from ``requirements-test.txt``
+::
+
+  pip install -r requirements-test.txt
+
+- Run tests
+::
+
+  pytest --cov
+

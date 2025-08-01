@@ -119,8 +119,8 @@ class Client():
       print('Data is "False"; perhaps this was called on the output of a failed function?')
       return False
 
-    if returned_data['status_code'] not in self.HTTP_SUCCESSFUL_BACKGROUND_CODES:
-      print('Data has a status code of {}, this function is not necesary'.format(returned_data['status_code']))
+    if returned_data.status_code not in self.HTTP_SUCCESSFUL_BACKGROUND_CODES:
+      print('Data has a status code of {}, polling is not necesary'.format(returned_data.status_code))
       return returned_data
 
     # ok, thats the known error cases out of the way...
@@ -272,9 +272,9 @@ class Client():
 
     # print('Validated json content: {}'.format(json_content))
 
-    # When an instance already exists there is error_code 409 and status_code 0. That may or may not actually be OK depending on what was planned...
+    # When an instance or volume already exists there is error_code 409 and status_code 0. That may or may not actually be OK depending on what was planned...
     # but I think its OK for my purposes.
-    if json_content['status_code'] not in self.HTTP_ERROR_CODES:
+    if returned_data.status_code not in self.HTTP_ERROR_CODES:
       # Assume we're OK
       return True
 

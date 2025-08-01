@@ -106,6 +106,8 @@ class Client():
   def poll_api(self, returned_data=None):
     """Manage polling for status updates on long running requests
 
+    Currently blocks and waits rather than polling.
+
     returned_data (default None) is a requests.Response object with what our api returned.
 
     Default implementation waits until an operation finishes or times out, rather than actually polling.
@@ -146,7 +148,7 @@ class Client():
     # print('Polling result: {}'.format(op_status.__dict__))
     print('Polling result: {}'.format(op_status))
 
-    print('Status is {}. Continuing to validating current data'.format(op_status.status_code))
+    print('Status is {}. Continuing to validate current data'.format(op_status.status_code))
     # Once we're no longer polling, validity check the result.
     # Check return codes are in order
     if self.validate(op_status) is True:

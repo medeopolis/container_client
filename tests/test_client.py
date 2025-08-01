@@ -99,15 +99,6 @@ def test_class_fn_poll_json_function_with_metadata_id_successful_validation():
   # What is it? 
   # assert api_client_poll is ...
 
-def test_class_fn_poll_json_direct_with_metadata_id_successful_validation():
-  returned_data = {'status_code': 200 , 'metadata': { 'id': 123 }}
-  api_client = Client()
-  api_client.request = MagicMock()
-  api_client.validate = MagicMock(return_value=True)
-  api_client_poll = api_client.poll_api(returned_data=returned_data)
-  # What is it? 
-  # assert api_client_poll is ...
-
 # # FIXME: for some reason this status code is not being handled correctly by returned_data['status_code']
 # def test_class_fn_poll_json_function_without_metadata_id():
 #   returned_data = MagicMock()
@@ -119,28 +110,7 @@ def test_class_fn_poll_json_direct_with_metadata_id_successful_validation():
 #   api_client_poll = api_client.poll_api(returned_data=returned_data)
 #   assert api_client_poll is False
 
-# # FIXME: for some reason this status code is not being handled correctly by returned_data['status_code']
-# def test_class_fn_poll_json_direct_without_metadata_id():
-#   # TODO: try this as string, as empty dict, other options?
-#   returned_data = { 'metadata': '' , 'status_code': 200 }
-#   api_client = Client()
-#   api_client.request = MagicMock()
-#   api_client.validate = MagicMock(return_value=True)
-#   api_client_poll = api_client.poll_api(returned_data=returned_data)
-#   assert api_client_poll is False
-
-# # FIXME: for some reason this status code is not being handled correctly by returned_data['status_code']
-# def test_class_fn_poll_json_function_with_metadata_id_failed_validation():
-#   returned_data = MagicMock()
-#   returned_data.json = MagicMock(return_value={ 'metadata': { 'id': 123 }} )
-#   returned_data.status_code = 200
-#   api_client = Client()
-#   api_client.request = MagicMock()
-#   api_client.validate = MagicMock(return_value=False)
-#   api_client_poll = api_client.poll_api(returned_data=returned_data)
-#   assert api_client_poll is None
-
-# TODO: test poll_api handles invalid status codes? is that its problem?
+# TODO: test that poll_api handles invalid status codes? is that its problem?
 
 
 ### Tests for Client.request

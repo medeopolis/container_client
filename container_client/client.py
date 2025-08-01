@@ -104,12 +104,10 @@ class Client():
 
     # ok, thats the known error cases out of the way...
 
+    # This duplicats validate() but I'd have to change it to return json_content instead of bool in order to re use it here.
     try:
       # read out json content from response
       json_content = returned_data.json()
-    except AttributeError as ae:
-      print("{} - we're going to try and treat our data as json and keep going".format(ae))
-      json_content = returned_data
     except requests.exceptions.JSONDecodeError as rejde:
       print('Response did not contain valid json. Error was {}'.format(rejde))
       return False

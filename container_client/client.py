@@ -56,6 +56,8 @@ class Client():
 
   # requests session.
   session = None
+  client_auth_certificates = None
+  server_verification = None
 
   # Where is the server? can be overriden. UNIX socket or https URIs are supported
   connection_target = '/var/lib/incus/unix.socket'
@@ -66,20 +68,39 @@ class Client():
 
     Only required for https targets
 
-    client_auth_certificates - Path to a certificate
-    server_verification - boolean True/False
+    client_auth_certificates - Path to a certificate or tuple of certificates
+    server_verification (default False) when a path to a server certificate is provided, turns on verification
     """
-    if client_auth_certificates == None:
-      print('A certificate in PEM format or a tuple of key/crt files must be provided')
-      return None
-    else:
-      self.session.cert = client_auth_certificates
 
-    if server_verification in [ None, False ]:
-      print('HTTPs server verification is turned off')
-      self.session.verify = False
+    print('Starting authentication process')
+
+    if self.client_auth_certificates == None:
+      print('self.client_auth_certificates == None')
+      if client_auth_certificates == None:
+        print('A certificate in PEM format or a tuple of (crt,key) files must be provided')
+        return None
+      else:
+        print('Setting self.client_auth_certificates to {}'.format(client_auth_certificates))
+        self.client_auth_certificates = client_auth_certificates
     else:
-      self.session.verify = True
+      print('self.client_auth_certificates already set to {}'.format(self.client_auth_certificates))
+
+    # Now self.client_auth_certificates is set, use that
+    self.session.cert = self.client_auth_certificates
+
+    if self.server_verification == None:
+      print('self.server_verification == None')
+      if server_verification in [ None, False ]:
+        print('HTTPs server verification is turned off')
+        self.session.verify = False
+      else:
+        print('HTTPS verification turned on using {}'.format(server_verification))
+        self.server_verification = server_verification
+    else:
+      print('self.server_verification already set to {}'.format(self.server_verification))
+
+    # Using self.server_verification, enable verification - if its requested.
+    self.session.verify = self.server_verification
 
 
   def poll_api(self, returned_data=None):

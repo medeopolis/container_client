@@ -22,6 +22,10 @@ import urllib3.exceptions
 import requests.exceptions
 import ssl
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class Client():
   """Container for API communication.
@@ -62,6 +66,7 @@ class Client():
   # Where is the server? can be overriden. UNIX socket or https URIs are supported
   connection_target = '/var/lib/incus/unix.socket'
 
+  logger.info('Client')
 
   def authenticate(self, client_auth_certificates=None, server_verification=False):
     """Authentication entrypoint
@@ -72,32 +77,32 @@ class Client():
     server_verification (default False) when a path to a server certificate is provided, turns on verification
     """
 
-    print('Starting authentication process')
+    logger.info('Starting authentication process')
 
     if self.client_auth_certificates == None:
-      print('self.client_auth_certificates == None')
+      logger.warning('self.client_auth_certificates == None')
       if client_auth_certificates == None:
-        print('A certificate in PEM format or a tuple of (crt,key) files must be provided')
+        logger.warning('A certificate in PEM format or a tuple of (crt,key) files must be provided')
         return None
       else:
-        print('Setting self.client_auth_certificates to {}'.format(client_auth_certificates))
+        logger.warning('Setting self.client_auth_certificates to {}'.format(client_auth_certificates))
         self.client_auth_certificates = client_auth_certificates
     else:
-      print('self.client_auth_certificates already set to {}'.format(self.client_auth_certificates))
+      logger.warning('self.client_auth_certificates already set to {}'.format(self.client_auth_certificates))
 
     # Now self.client_auth_certificates is set, use that
     self.session.cert = self.client_auth_certificates
 
     if self.server_verification == None:
-      print('self.server_verification == None')
+      logger.warning('self.server_verification == None')
       if server_verification in [ None, False ]:
-        print('HTTPs server verification is turned off')
+        logger.warning('HTTPs server verification is turned off')
         self.session.verify = False
       else:
-        print('HTTPS verification turned on using {}'.format(server_verification))
+        logger.warning('HTTPS verification turned on using {}'.format(server_verification))
         self.server_verification = server_verification
     else:
-      print('self.server_verification already set to {}'.format(self.server_verification))
+      logger.warning('self.server_verification already set to {}'.format(self.server_verification))
 
     # Using self.server_verification, enable verification - if its requested.
     self.session.verify = self.server_verification
@@ -114,15 +119,15 @@ class Client():
     """
 
     if returned_data == None:
-      print('Data is "None"; perhaps this was called without a parameter')
+      logging.info('Data is "None"; perhaps this was called without a parameter')
       return False
 
     if returned_data == False:
-      print('Data is "False"; perhaps this was called on the output of a failed function?')
+      logging.info('Data is "False"; perhaps this was called on the output of a failed function?')
       return False
 
     if returned_data.status_code not in self.HTTP_SUCCESSFUL_BACKGROUND_CODES:
-      print('Data has a status code of {}, polling is not necesary'.format(returned_data.status_code))
+      logging.info('Data has a status code of {}, polling is not necesary'.format(returned_data.status_code))
       return returned_data
 
     # ok, thats the known error cases out of the way...
@@ -132,7 +137,7 @@ class Client():
       # read out json content from response
       json_content = returned_data.json()
     except requests.exceptions.JSONDecodeError as rejde:
-      print('Response did not contain valid json. Error was {}'.format(rejde))
+      logging.warning('Response did not contain valid json. Error was {}'.format(rejde))
       return False
 
     # So thats the basic validation done.
@@ -140,21 +145,21 @@ class Client():
     # TODO: try/catch this
     operation_id = json_content['metadata']['id']
 
-    print('Waiting for request to complete')
+    logging.info('Waiting for request to complete')
 
     # with operation ID in hand - we hope - we can start polling.
     # I don't know how this works... will it just sit and wait? Will I need to update some timeout?
     op_status = self.request(api_path='operations/{}/wait'.format(operation_id))
-    # print('Polling result: {}'.format(op_status.__dict__))
-    print('Polling result: {}'.format(op_status))
+    # logging.warning('Polling result: {}'.format(op_status.__dict__))
+    logging.warning('Polling result: {}'.format(op_status))
 
-    print('Status is {}. Continuing to validate current data'.format(op_status.status_code))
+    logging.info('Status is {}. Continuing to validate current data'.format(op_status.status_code))
     # Once we're no longer polling, validity check the result.
     # Check return codes are in order
     if self.validate(op_status) is True:
       return op_status
     else:
-      print('Poll validate failed on {}'.format(op_status.__dict__))
+      logging.warning('Poll validate failed on {}'.format(op_status.__dict__))
       return None
 
 
@@ -177,10 +182,10 @@ class Client():
 
     # Pull connection target from object
     connection_target = self.connection_target
+    logging.warning('Connection target is {}'.format(connection_target))
 
     if post_json is None and request_type in ['PUT', 'PATCH', 'POST']:
-      print('This request type ({}) requires post_json be provided'.format(request_type))
-      # TODO: raise error
+      logging.info('This request type ({}) requires post_json be provided'.format(request_type))
 
     # import `re` and match on > 1st char?
     if connection_target.startswith('/'):
@@ -191,7 +196,7 @@ class Client():
         request_result = self.session.request(request_type,
                                 'http+unix://{0}/{1}/{2}'.format(quote_plus(connection_target), api_version, api_path), json=post_json)
       except ( urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
-        print('Unable to connect to socket at {}, error {}'.format(connection_target, uepe))
+        logging.warning('Unable to connect to socket at {}, error {}'.format(connection_target, uepe))
         # Raise error to caller?
         return None
 
@@ -199,6 +204,7 @@ class Client():
     elif connection_target.startswith('https://'):
       self.session = requests.Session()
 
+      logging.info('Calling to authenticate')
       self.authenticate(client_auth_certificates, server_verification)
 
       # TODO: catch exceptions when port is wrong/absent
@@ -207,46 +213,45 @@ class Client():
                                 '{0}/{1}/{2}'.format(connection_target, api_version, api_path), json=post_json)
       # except (urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
       except urllib3.exceptions.ProtocolError as uepe:
-        print('Unable to connect to remote server at {}, error {}'.format(connection_target, uepe))
+        logging.error('Unable to connect to remote server at {}, error {}'.format(connection_target, uepe))
         # Raise error to caller?
         return None
       except (ssl.SSLCertVerificationError, urllib3.exceptions.SSLError, requests.exceptions.SSLError) as sscve:
-        print('Unable to verify certificate provided by {}, error {}'.format(connection_target, sscve))
+        logging.error('Unable to verify certificate provided by {}, error {}'.format(connection_target, sscve))
         # Raise error to caller?
         return None
       except urllib3.exceptions.MaxRetryError as uemre:
-        print('Unable to establish stable connection with {}, error {}'.format(connection_target, sscve))
+        logging.error('Unable to establish stable connection with {}, error {}'.format(connection_target, sscve))
         # Raise error to caller?
         return None
       except requests.exceptions.ConnectionError as rece:
-        print('Unable to connect to host {}, error {}'.format(connection_target, rece))
+        logging.error('Unable to connect to host {}, error {}'.format(connection_target, rece))
         # Raise error to caller?
         return None
       except urllib3.exceptions.NameResolutionError as uenre:
-        print('Unable to resolve host {}, error {}'.format(connection_target, uenre))
+        logging.error('Unable to resolve host {}, error {}'.format(connection_target, uenre))
         # Raise error to caller?
         return None
 
     # Lastly just produce an error
     else:
-      print('Unknown connection target: {}'.format(connection_target))
+      logging.warning('Unknown connection target: {}'.format(connection_target))
       return None
 
     # Print out request result 
-    # print('Request result headers: {}'.format(request_result.headers))
-    # print('Request result full: {}'.format(request_result.__dict__))
+    # logging.debug('Request result headers: {}'.format(request_result.headers))
+    # logging.debug('Request result full: {}'.format(request_result.__dict__))
 
     # We don't always want validation, it may not be appropriate (eg pulling logs seems to cause this)
     if skip_result_validation is True:
-      # print('Skipping validation and returning')
+      logging.info('Skipping validation and returning')
       return request_result
 
     # Check return codes are in order
     if self.validate(request_result) is True:
       return request_result
     else:
-      print('Request validate failed on {}'.format(request_result.__dict__))
-      print(request_result)
+      logging.warning('Request validate failed on {}'.format(request_result.__dict__))
       # Raise error instead of return none?
       return None
 
@@ -262,17 +267,17 @@ class Client():
       return False
 
     if returned_data.ok is not True:
-      print('Request returned an HTTP error status: {}'.format(returned_data.status_code))
+      logging.info('Request returned an HTTP error status: {}'.format(returned_data.status_code))
       return False
 
     try:
       # read out json content from response
       json_content = returned_data.json()
     except requests.exceptions.JSONDecodeError as rejde:
-      print('Response did not contain valid json. Error was {}'.format(rejde))
+      logging.warning('Response did not contain valid json. Error was {}'.format(rejde))
       return False
 
-    # print('Validated json content: {}'.format(json_content))
+    # logging.debug('Validated json content: {}'.format(json_content))
 
     # When an instance or volume already exists there is error_code 409 and status_code 0. That may or may not actually be OK depending on what was planned...
     # but I think its OK for my purposes.

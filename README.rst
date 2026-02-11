@@ -25,7 +25,18 @@ request/json verification doesn't suit.
 Installing
 ==========
 
-This is not currently distributed through pypi or similar channels. Please install it with `pip install` directly from the source repository.
+This is not currently distributed through pypi or similar channels. Please install it with `pip install` directly from the source repository:
+
+::
+
+  pip install -e .
+
+or via requirements.txt:
+
+::
+
+  grep container requirements.txt
+  -e git+https://github.com/medeopolis/container_client#egg=container_client
 
 
 Usage

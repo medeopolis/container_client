@@ -159,13 +159,13 @@ class Client():
     if self.validate(op_status) is True:
       return op_status
     else:
-      logging.warning('Poll validate failed on {}'.format(op_status.__dict__))
+      logging.debug('Poll validate failed on {}'.format(op_status.__dict__))
       return None
 
 
   def request(self, api_version='1.0', request_type='GET', api_path='', post_json=None,
                skip_result_validation=False, client_auth_certificates=None, server_verification=False,
-               *args, **kwargs):
+               post_params=None, *args, **kwargs):
     """Make request to API
 
     Send query to LXD or Incus API endpoint.
@@ -194,7 +194,8 @@ class Client():
 
       try:
         request_result = self.session.request(request_type,
-                                'http+unix://{0}/{1}/{2}'.format(quote_plus(connection_target), api_version, api_path), json=post_json)
+                                'http+unix://{0}/{1}/{2}'.format(quote_plus(connection_target), api_version, api_path), json=post_json,
+                                                                      params=post_params)
       except ( urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
         logging.warning('Unable to connect to socket at {}, error {}'.format(connection_target, uepe))
         # Raise error to caller?
@@ -210,7 +211,7 @@ class Client():
       # TODO: catch exceptions when port is wrong/absent
       try:
         request_result = self.session.request(request_type,
-                                '{0}/{1}/{2}'.format(connection_target, api_version, api_path), json=post_json)
+                                '{0}/{1}/{2}'.format(connection_target, api_version, api_path), json=post_json, params=post_params)
       # except (urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
       except urllib3.exceptions.ProtocolError as uepe:
         logging.error('Unable to connect to remote server at {}, error {}'.format(connection_target, uepe))

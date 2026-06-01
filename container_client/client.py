@@ -239,6 +239,10 @@ class Client():
         logging.error('Unable to resolve host {}, error {}'.format(connection_target, uenre))
         # Raise error to caller?
         return None
+      # FIXME: not catching.
+      except OSError as ose:
+        logging.error('File related error. Error was {}'.format(ose))
+        return None
 
     # Lastly just produce an error
     else:

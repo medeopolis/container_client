@@ -205,8 +205,14 @@ class Client():
     elif connection_target.startswith('https://'):
       self.session = requests.Session()
 
-      logging.info('Calling to authenticate')
-      self.authenticate(client_auth_certificates, server_verification)
+      # If these are unset we need to auth, otherwise we can skip this step - should only be needed once
+      # FIXME: If this is True - like now - API auth succeeds. If the test is changed to the one below (or several variations) api calls fail because
+      # the remote cert is self signed. Why?
+      # Seems to be because the every invocation the values in self.session.cert and self.session.verify are lost, meaning the code fails. why, not
+      # sure. They should survive a single run. Not going to debug though, more likely to change library.
+      # if self.session.cert == None and self.session.verify == None:
+      if True:
+        self.authenticate(client_auth_certificates, server_verification)
 
       # TODO: catch exceptions when port is wrong/absent
       try:

@@ -77,32 +77,32 @@ class Client():
     server_verification (default False) when a path to a server certificate is provided, turns on verification
     """
 
-    logger.info('Starting authentication process')
+    logger.debug('Ensuring session certificates and server verification certificates are correctly set')
 
     if self.client_auth_certificates == None:
-      logger.warning('self.client_auth_certificates == None')
+      logger.debug('self.client_auth_certificates == None')
       if client_auth_certificates == None:
-        logger.warning('A certificate in PEM format or a tuple of (crt,key) files must be provided')
+        logger.debug('A certificate in PEM format or a tuple of (crt,key) files must be provided')
         return None
       else:
-        logger.warning('Setting self.client_auth_certificates to {}'.format(client_auth_certificates))
+        logger.debug('Setting self.client_auth_certificates to {}'.format(client_auth_certificates))
         self.client_auth_certificates = client_auth_certificates
     else:
-      logger.warning('self.client_auth_certificates already set to {}'.format(self.client_auth_certificates))
+      logger.debug('self.client_auth_certificates already set to {}'.format(self.client_auth_certificates))
 
     # Now self.client_auth_certificates is set, use that
     self.session.cert = self.client_auth_certificates
 
     if self.server_verification == None:
-      logger.warning('self.server_verification == None')
+      logger.debug('self.server_verification == None')
       if server_verification in [ None, False ]:
-        logger.warning('HTTPs server verification is turned off')
+        logger.debug('HTTPs server verification is turned off')
         self.session.verify = False
       else:
-        logger.warning('HTTPS verification turned on using {}'.format(server_verification))
+        logger.debug('HTTPS verification turned on using {}'.format(server_verification))
         self.server_verification = server_verification
     else:
-      logger.warning('self.server_verification already set to {}'.format(self.server_verification))
+      logger.debug('self.server_verification already set to {}'.format(self.server_verification))
 
     # Using self.server_verification, enable verification - if its requested.
     self.session.verify = self.server_verification
@@ -137,7 +137,7 @@ class Client():
       # read out json content from response
       json_content = returned_data.json()
     except requests.exceptions.JSONDecodeError as rejde:
-      logging.warning('Response did not contain valid json. Error was {}'.format(rejde))
+      logging.debug('Response did not contain valid json. Error was {}'.format(rejde))
       return False
 
     # So thats the basic validation done.
@@ -150,8 +150,8 @@ class Client():
     # with operation ID in hand - we hope - we can start polling.
     # I don't know how this works... will it just sit and wait? Will I need to update some timeout?
     op_status = self.request(api_path='operations/{}/wait'.format(operation_id))
-    # logging.warning('Polling result: {}'.format(op_status.__dict__))
-    logging.warning('Polling result: {}'.format(op_status))
+    # logging.debug('Polling result: {}'.format(op_status.__dict__))
+    logging.debug('Polling result: {}'.format(op_status))
 
     logging.info('Status is {}. Continuing to validate current data'.format(op_status.status_code))
     # Once we're no longer polling, validity check the result.
@@ -182,7 +182,7 @@ class Client():
 
     # Pull connection target from object
     connection_target = self.connection_target
-    logging.warning('Connection target is {}'.format(connection_target))
+    logging.debug('Connection target is {}'.format(connection_target))
 
     if post_json is None and request_type in ['PUT', 'PATCH', 'POST']:
       logging.info('This request type ({}) requires post_json be provided'.format(request_type))
@@ -197,7 +197,7 @@ class Client():
                                 'http+unix://{0}/{1}/{2}'.format(quote_plus(connection_target), api_version, api_path), json=post_json,
                                                                       params=post_params)
       except ( urllib3.exceptions.ProtocolError, requests.exceptions.ConnectionError) as uepe:
-        logging.warning('Unable to connect to socket at {}, error {}'.format(connection_target, uepe))
+        logging.debug('Unable to connect to socket at {}, error {}'.format(connection_target, uepe))
         # Raise error to caller?
         return None
 
@@ -236,12 +236,12 @@ class Client():
 
     # Lastly just produce an error
     else:
-      logging.warning('Unknown connection target: {}'.format(connection_target))
+      logging.debug('Unknown connection target: {}'.format(connection_target))
       return None
 
     # Print out request result 
-    # logging.debug('Request result headers: {}'.format(request_result.headers))
-    # logging.debug('Request result full: {}'.format(request_result.__dict__))
+    logging.debug('Request result headers: {}'.format(request_result.headers))
+    logging.debug('Request result full: {}'.format(request_result.__dict__))
 
     # We don't always want validation, it may not be appropriate (eg pulling logs seems to cause this)
     if skip_result_validation is True:
@@ -252,7 +252,7 @@ class Client():
     if self.validate(request_result) is True:
       return request_result
     else:
-      logging.warning('Request validate failed on {}'.format(request_result.__dict__))
+      logging.debug('Request validate failed on {}'.format(request_result.__dict__))
       # Raise error instead of return none?
       return None
 
@@ -275,7 +275,7 @@ class Client():
       # read out json content from response
       json_content = returned_data.json()
     except requests.exceptions.JSONDecodeError as rejde:
-      logging.warning('Response did not contain valid json. Error was {}'.format(rejde))
+      logging.debug('Response did not contain valid json. Error was {}'.format(rejde))
       return False
 
     # logging.debug('Validated json content: {}'.format(json_content))
